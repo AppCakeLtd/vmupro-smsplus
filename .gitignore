@@ -1,0 +1,4 @@
+.DS_Store
+*.old
+src/build
+src/managed_components

@@ -1,0 +1,3 @@
+dependencies:
+  elf_loader:
+    version: 1.*

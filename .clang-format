@@ -1,0 +1,67 @@
+BasedOnStyle: Google
+
+TabWidth: "2"
+IndentWidth: "2"
+ColumnLimit: 120
+UseTab: Never
+AccessModifierOffset: -2
+
+KeepEmptyLinesAtTheStartOfBlocks: false
+MaxEmptyLinesToKeep: 2
+
+# Namespaces
+FixNamespaceComments: true
+
+#
+# Break long function calls/defs into individual lines
+# instead of
+# void thing(
+#      a, b, c, d );
+#
+
+# Disable binpack on long funcs/calls
+BinPackArguments: false
+BinPackParameters: false
+# And prevent it just sticking them all on the next line
+AlowAllArgumentsOnNextLine: false
+AllowAllParametersOfDeclarationOnNextLine: false
+SortIncludes: false
+
+AlignConsecutiveAssignments:
+  Enabled: true
+  AcrossEmptyLines: false
+  AcrossComments: false
+
+#
+# Then prevent this:
+# void thing(
+#     a,
+#     b,
+#     c,
+#     d);
+# by putting the ) on a new line
+#
+AlignAfterOpenBracket: BlockIndent
+
+# Headers
+SeparateDefinitionBlocks: Always
+
+InsertTrailingCommas: None
+InsertNewlineAtEOF: true
+
+NamespaceIndentation: All
+
+BreakBeforeBraces: Custom
+BraceWrapping:
+  AfterCaseLabel: false
+  AfterControlStatement: Never
+  AfterEnum: false
+  AfterFunction: false
+  AfterNamespace: false
+  AfterStruct: false
+  AfterUnion: false
+  AfterExternBlock: false
+  BeforeCatch: true
+  BeforeElse: true
+  BeforeLambdaBody: false
+  BeforeWhile: false
