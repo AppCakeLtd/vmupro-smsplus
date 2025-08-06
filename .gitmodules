@@ -1,0 +1,3 @@
+[submodule "vmupro-sdk"]
+	path = vmupro-sdk
+	url = git@github.com:AppCakeLtd/vmupro-sdk.git
