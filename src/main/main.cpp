@@ -473,6 +473,7 @@ void app_main(void) {
     sms_sram     = (uint8_t *)malloc(0x8000);
     sms_ram      = (uint8_t *)malloc(0x2000);
     sms_vdp_vram = (uint8_t *)malloc(0x4000);
+    pauseBuffer  = (uint8_t *)malloc(115200);
 
     // We need a maximum of 736 stereo 16-bit samples at 44.1khz at 60fps. This works out to
     // 736 x 4 = 2944 bytes
