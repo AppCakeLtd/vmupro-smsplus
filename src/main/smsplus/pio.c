@@ -64,9 +64,9 @@ static io_state *io_current;
 void pio_init(void) {
   int i, j;
   if (!io_lut) {
-    io_lut    = (io_state **)heap_caps_malloc(2 * sizeof(io_state *), MALLOC_CAP_SPIRAM);
-    io_lut[0] = (io_state *)heap_caps_malloc(256 * sizeof(io_state), MALLOC_CAP_SPIRAM);
-    io_lut[1] = (io_state *)heap_caps_malloc(256 * sizeof(io_state), MALLOC_CAP_SPIRAM);
+    io_lut    = (io_state **)malloc(2 * sizeof(io_state *));
+    io_lut[0] = (io_state *)malloc(256 * sizeof(io_state));
+    io_lut[1] = (io_state *)malloc(256 * sizeof(io_state));
   }
 
   /* Make pin state LUT */

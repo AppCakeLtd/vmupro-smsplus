@@ -537,7 +537,7 @@ int load_rom(char *filename) {
     fd = fopen("/sd/roms/col/BIOS.col", "rb");
     if (!fd) abort();
 
-    coleco.rom = (uint8_t *)heap_caps_malloc(0x2000, MALLOC_CAP_SPIRAM);
+    coleco.rom = (uint8_t *)malloc(0x2000);
 
     fread(coleco.rom, 0x2000, 1, fd);
 
@@ -566,7 +566,7 @@ int load_rom(char *filename) {
   cart.size = actual_size;
   if (cart.size < 0x4000) cart.size = 0x4000;
 
-  cart.rom   = (uint8_t *)heap_caps_malloc(cart.size, MALLOC_CAP_SPIRAM);
+  cart.rom   = (uint8_t *)malloc(cart.size);
   size_t cnt = fread(cart.rom, cart.size, 1, fd);
   // if (cnt != 1) abort();
   __asm__("nop");

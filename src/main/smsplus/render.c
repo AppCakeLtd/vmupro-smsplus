@@ -74,23 +74,23 @@ extern const uint8_t lut[0x10000];
 static uint8_t object_index_count;
 
 /* Top Border area height */
-static DRAM_ATTR const uint8_t active_border[2][3] = {
+static const uint8_t active_border[2][3] = {
     {24, 8, 0},  /* NTSC VDP */
     {48, 32, 24} /*  PAL VDP */
 };
 
 /* Active Scan Area height */
-static DRAM_ATTR const uint16 active_range[2] = {
+static const uint16 active_range[2] = {
     243, /* NTSC VDP */
     294  /*  PAL VDP */
 };
 
 /* CRAM palette in TMS compatibility mode */
-static DRAM_ATTR const uint8_t
-    tms_crom[] = {0x00, 0x00, 0x08, 0x0C, 0x10, 0x30, 0x01, 0x3C, 0x02, 0x03, 0x05, 0x0F, 0x04, 0x33, 0x15, 0x3F};
+static const uint8_t tms_crom[] =
+    {0x00, 0x00, 0x08, 0x0C, 0x10, 0x30, 0x01, 0x3C, 0x02, 0x03, 0x05, 0x0F, 0x04, 0x33, 0x15, 0x3F};
 
 /* original TMS palette for SG-1000 & Colecovision */
-static DRAM_ATTR const uint8_t tms_palette[16 * 3][3] = {
+static const uint8_t tms_palette[16 * 3][3] = {
     /* from Sean Young (http://www.smspower.org/dev/docs/tms9918a.txt) */
     {0, 0, 0},
     {0, 0, 0},
@@ -147,7 +147,7 @@ static DRAM_ATTR const uint8_t tms_palette[16 * 3][3] = {
 };
 
 /* Attribute expansion table */
-static DRAM_ATTR const uint32 atex[4] = {
+static const uint32 atex[4] = {
     0x00000000,
     0x10101010,
     0x20202020,
@@ -217,9 +217,9 @@ void render_shutdown(void) {}
 /* Initialize the rendering data */
 void render_init(void) {
   if (!internal_buffer) {
-    internal_buffer    = (uint8_t **)heap_caps_malloc(2, MALLOC_CAP_SPIRAM);
-    internal_buffer[0] = (uint8_t *)heap_caps_malloc(0x200, MALLOC_CAP_SPIRAM);
-    internal_buffer[1] = (uint8_t *)heap_caps_malloc(0x200, MALLOC_CAP_SPIRAM);
+    internal_buffer    = (uint8_t **)malloc(2 * sizeof(uint8_t *));
+    internal_buffer[0] = (uint8_t *)malloc(0x200);
+    internal_buffer[1] = (uint8_t *)malloc(0x200);
   }
 
   int i, j;

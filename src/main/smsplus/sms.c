@@ -104,8 +104,8 @@ void mapper_reset(void) {
 }
 
 void sms_init(void) {
-  dummy_read  = (uint8_t*)heap_caps_malloc(0x400, MALLOC_CAP_SPIRAM);
-  dummy_write = (uint8_t*)heap_caps_malloc(0x400, MALLOC_CAP_SPIRAM);
+  dummy_read  = (uint8_t*)malloc(0x400);
+  dummy_write = (uint8_t*)malloc(0x400);
 
   z80_init(0, 0, 0, sms_irq_callback);
 
