@@ -1,0 +1,125 @@
+name: Build and Release
+
+on:
+  push:
+    tags:
+      - "v*" # Triggers on version tags like v1.0.0, v2.1.3, etc.
+
+env:
+  IDF_VERSION: "v5.4"
+  ESP_TARGET: "esp32s3"
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+          fetch-depth: 0
+
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.11"
+
+      - name: Install ESP-IDF
+        run: |
+          mkdir -p ~/esp
+          cd ~/esp
+          git clone --recursive --branch ${{ env.IDF_VERSION }} https://github.com/espressif/esp-idf.git
+          cd esp-idf
+          ./install.sh ${{ env.ESP_TARGET }}
+
+      - name: Verify ESP-IDF installation
+        run: |
+          cd ~/esp/esp-idf
+          . ./export.sh
+          idf.py --version
+
+      - name: Set target and configure
+        working-directory: ./src
+        run: |
+          cd ~/esp/esp-idf && . ./export.sh && cd $GITHUB_WORKSPACE/src
+          idf.py set-target ${{ env.ESP_TARGET }}
+
+      - name: Build project
+        working-directory: ./src
+        run: |
+          cd ~/esp/esp-idf && . ./export.sh && cd $GITHUB_WORKSPACE/src
+          idf.py build
+
+      - name: Install packer dependencies
+        run: |
+          pip install pillow
+
+      - name: Package application
+        working-directory: ./src
+        run: |
+          chmod +x pack.sh
+          ./pack.sh
+
+      - name: Extract version from tag
+        id: version
+        run: echo "VERSION=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
+
+      - name: Generate changelog
+        id: changelog
+        run: |
+          # Get the previous tag
+          PREVIOUS_TAG=$(git tag --sort=-version:refname | grep -v "^${{ steps.version.outputs.VERSION }}$" | head -n1)
+
+          if [ -z "$PREVIOUS_TAG" ]; then
+            echo "No previous tag found, using all commits"
+            COMMITS=$(git log --pretty=format:"- %s (%h)" --reverse)
+          else
+            echo "Previous tag: $PREVIOUS_TAG"
+            COMMITS=$(git log --pretty=format:"- %s (%h)" --reverse $PREVIOUS_TAG..HEAD)
+          fi
+
+          # Save changelog to file and environment
+          echo "CHANGELOG<<EOF" >> $GITHUB_OUTPUT
+          echo "$COMMITS" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+
+          echo "PREVIOUS_TAG=$PREVIOUS_TAG" >> $GITHUB_OUTPUT
+
+      - name: Create release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.ref }}
+          name: Release ${{ steps.version.outputs.VERSION }}
+          body: |
+            ## VMUPro smsplus NES Emulator ${{ steps.version.outputs.VERSION }}
+
+            ### What's New
+            - Automatic build from ESP-IDF ${{ env.IDF_VERSION }}
+            - Target: ${{ env.ESP_TARGET }}
+
+            ### Changes Since ${{ steps.changelog.outputs.PREVIOUS_TAG || 'First Release' }}
+            ${{ steps.changelog.outputs.CHANGELOG }}
+
+            ### Installation
+            1. Download the `smsplus.vmupack` file below
+            2. Copy it to the `apps` directory on your VMUPro's microSD card
+            3. The emulator will appear in your VMUPro app menu
+
+            ---
+            **Full Changelog**: https://github.com/${{ github.repository }}/compare/${{ steps.changelog.outputs.PREVIOUS_TAG }}...${{ steps.version.outputs.VERSION }}
+
+            *Built automatically from commit: ${{ github.sha }}*
+          files: |
+            ./src/smsplus.vmupack
+          draft: false
+          prerelease: false
+
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-artifacts-${{ steps.version.outputs.VERSION }}
+          path: |
+            ./src/build/smsplus.app.elf
+            ./src/smsplus.vmupack
+          retention-days: 30
