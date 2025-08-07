@@ -2,3 +2,7 @@
 *.old
 src/build
 src/managed_components
+.vscode
+src/vmupacker_debug
+src/comport.txt
+*.vmupack
