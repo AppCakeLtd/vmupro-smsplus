@@ -2,8 +2,9 @@
   "metadata_version": 1,
   "app_name": "SMSPlus",
   "app_author": "8BitMods",
-  "app_version": "1.0.0",
+  "app_version": "0.9.1",
   "app_mode": 2,
+  "app_environment": "native",
   "icon_transparency": true,
   "app_entry_point": "app_main",
   "resources": []
