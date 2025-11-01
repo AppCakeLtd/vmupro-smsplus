@@ -7,7 +7,7 @@ extern "C" {
 #include "smsplus/shared.h"
 };
 
-static const char *kLogSMSEmu = "[SMSPLUS]";
+static const char* kLogSMSEmu = "[SMSPLUS]";
 
 static constexpr size_t SMS_SCREEN_WIDTH   = 256;
 static constexpr size_t SMS_VISIBLE_HEIGHT = 192;
@@ -15,19 +15,21 @@ static constexpr size_t SMS_VISIBLE_HEIGHT = 192;
 static constexpr size_t GG_SCREEN_WIDTH   = 160;
 static constexpr size_t GG_VISIBLE_HEIGHT = 144;
 
-static char *launchfile             = nullptr;
-static uint8_t *rombuffer           = nullptr;
+static char* launchfile             = nullptr;
+static uint8_t* rombuffer           = nullptr;
 static int frame_buffer_offset      = 48;  // for game gear apparently
 static bool initialised             = false;
-static uint8_t *sms_back_buffer     = nullptr;
-volatile uint32_t *sms_audio_buffer = nullptr;
-static uint8_t *sms_sram            = nullptr;
-static uint8_t *sms_ram             = nullptr;
-static uint8_t *sms_vdp_vram        = nullptr;
-static uint8_t *pauseBuffer         = nullptr;
+static uint8_t* sms_back_buffer     = nullptr;
+volatile uint32_t* sms_audio_buffer = nullptr;
+static uint8_t* sms_sram            = nullptr;
+static uint8_t* sms_ram             = nullptr;
+static uint8_t* sms_vdp_vram        = nullptr;
+static uint8_t* pauseBuffer         = nullptr;
 
-static bool emuRunning              = true;
-static bool inOptionsMenu           = false;
+static bool emuRunning    = true;
+static bool inOptionsMenu = false;
+static bool swapButtons   = false;
+
 static int frame_counter            = 0;
 static int smsContextSelectionIndex = 0;
 static int smsCurrentPaletteIndex   = 0;
@@ -48,11 +50,12 @@ typedef enum ContextMenuEntryType {
   MENU_OPTION_PALETTE,
   MENU_OPTION_SCALING,
   MENU_OPTION_STATE_SLOT,
+  MENU_OPTION_BUTTON_SWAP,
   MENU_OPTION_NONE
 };
 
 typedef struct ContextMenuEntry_s {
-  const char *title;
+  const char* title;
   bool enabled              = true;
   ContextMenuEntryType type = MENU_ACTION;
 } ContextMenuEntry;
@@ -70,17 +73,17 @@ const ContextMenuEntry emuContextOptionEntries[5] = {
     {.title = "Brightness", .enabled = true, .type = MENU_OPTION_BRIGHTNESS},
     {.title = "Palette", .enabled = true, .type = MENU_OPTION_PALETTE},
     {.title = "State Slot", .enabled = true, .type = MENU_OPTION_STATE_SLOT},
-    {.title = "", .enabled = false, .type = MENU_OPTION_NONE},
+    {.title = "Swap A+B", .enabled = false, .type = MENU_OPTION_BUTTON_SWAP},
 };
 
-static const char *PaletteNames[]             = {"Nofrendo", "Composite", "Classic", "NTSC", "PVM", "Smooth"};
+static const char* PaletteNames[]             = {"Nofrendo", "Composite", "Classic", "NTSC", "PVM", "Smooth"};
 static EmulatorMenuState currentEmulatorState = EmulatorMenuState::EMULATOR_RUNNING;
 
 void sms_frame(int skip_render);
 void sms_init(void);
 void sms_reset(void);
 
-extern "C" void system_manage_sram(uint8_t *sram, int cartslot, int mode) {}
+extern "C" void system_manage_sram(uint8_t* sram, int cartslot, int mode) {}
 
 static void update_frame_time(uint64_t ftime) {
   num_frames++;
@@ -104,11 +107,11 @@ static float get_fps() {
   return num_frames / (frame_time_total / 1e6f);
 }
 
-static bool savaStateHandler(const char *filename) {
+static bool savaStateHandler(const char* filename) {
   // Save to a file named after the game + state (.ggstate)
   char filepath[512];
-  vmupro_snprintf(filepath, 512, "/sdcard/roms/%s/%sstate", "MasterSystem", filename);
-  FILE *f = fopen(filepath, "w");
+  vmupro_snprintf(filepath, 512, "/sdcard/roms/%s/%sstate", "SMSGG", filename);
+  FILE* f = fopen(filepath, "w");
   if (f) {
     system_save_state(f);
     fclose(f);
@@ -118,11 +121,11 @@ static bool savaStateHandler(const char *filename) {
   return false;
 }
 
-static bool loadStateHandler(const char *filename) {
+static bool loadStateHandler(const char* filename) {
   char filepath[512];
-  vmupro_snprintf(filepath, 512, "/sdcard/roms/%s/%sstate", "MasterSystem", filename);
+  vmupro_snprintf(filepath, 512, "/sdcard/roms/%s/%sstate", "SMSGG", filename);
 
-  FILE *f = fopen(filepath, "r");
+  FILE* f = fopen(filepath, "r");
   if (f) {
     system_load_state(f);
     fclose(f);
@@ -186,6 +189,12 @@ void Tick() {
                   PaletteNames[smsCurrentPaletteIndex], 190 - tlen - 5, startY + (x * 22), fgColor, bgColor
               );
             } break;
+            case MENU_OPTION_BUTTON_SWAP: {
+              char swapTextState[5] = "Yes";
+              vmupro_snprintf(swapTextState, 6, "%s", (swapButtons ? "Yes" : "No"));
+              int tlen = vmupro_calc_text_length(swapTextState);
+              vmupro_draw_text(swapTextState, 190 - tlen - 5, startY + (x * 22), fgColor, bgColor);
+            } break;
             default:
               break;
           }
@@ -219,7 +228,7 @@ void Tick() {
         if (smsContextSelectionIndex == 0) {
           vmupro_resume_double_buffer_renderer();
           // Save in both cases
-          savaStateHandler((const char *)launchfile);
+          savaStateHandler((const char*)launchfile);
 
           // Close the modal
           reset_frame_time();
@@ -229,7 +238,7 @@ void Tick() {
         }
         else if (smsContextSelectionIndex == 1) {
           vmupro_resume_double_buffer_renderer();
-          loadStateHandler((const char *)launchfile);
+          loadStateHandler((const char*)launchfile);
 
           // Close the modal
           reset_frame_time();
@@ -350,7 +359,7 @@ void Tick() {
         renderFrame = 1;
       }
 
-      int16_t *buff16 = (int16_t *)sms_audio_buffer;
+      int16_t* buff16 = (int16_t*)sms_audio_buffer;
       for (int x = 0; x < sms_snd.sample_count; ++x) {
         buff16[x * 2]     = sms_snd.output[0][x];  // Left
         buff16[x * 2 + 1] = sms_snd.output[1][x];  // Right
@@ -358,7 +367,7 @@ void Tick() {
 
 
       vmupro_audio_add_stream_samples(
-          (int16_t *)sms_audio_buffer, sms_snd.sample_count * 2, vmupro_stereo_mode_t::VMUPRO_AUDIO_STEREO, true
+          (int16_t*)sms_audio_buffer, sms_snd.sample_count * 2, vmupro_stereo_mode_t::VMUPRO_AUDIO_STEREO, true
       );
 
       ++frame_counter;
@@ -397,11 +406,17 @@ void app_main(void) {
   vmupro_log(VMUPRO_LOG_INFO, kLogSMSEmu, "Starting SMSPLUS", option.version);
 
   vmupro_emubrowser_settings_t emuSettings = {
-      .title = "Master System", .rootPath = "/sdcard/roms/MasterSystem", .filterExtension = ".sms"
+      .version         = 1,
+      .title           = "SMSPlus GX",
+      .rootPath        = "/sdcard/roms/SMSGG",
+      .filterExtension = ".sms,.gg",
+      .showFiles       = true,
+      .showFolders     = true,
+      .showIcons       = true
   };
   vmupro_emubrowser_init(emuSettings);
 
-  launchfile = (char *)malloc(512);
+  launchfile = (char*)malloc(512);
   memset(launchfile, 0x00, 512);
   vmupro_emubrowser_render_contents(launchfile);
   if (strlen(launchfile) == 0) {
@@ -409,28 +424,28 @@ void app_main(void) {
     return;
   }
 
-  char launchPath[512 + 22];
-  vmupro_snprintf(launchPath, (512 + 22), "/sdcard/roms/MasterSystem/%s", launchfile);
+  // char launchpath[512 + 22];
+  // vmupro_snprintf(launchfile, (512 + 22), "/sdcard/roms/SMSGG/%s", launchfile);
 
   size_t romfilesize = 0;
-  if (vmupro_file_exists(launchPath)) {
-    romfilesize = vmupro_get_file_size(launchPath);
+  if (vmupro_file_exists(launchfile)) {
+    romfilesize = vmupro_get_file_size(launchfile);
     if (romfilesize > 0) {
-      rombuffer = (uint8_t *)malloc(romfilesize);
-      bool res  = vmupro_read_file_complete(launchPath, rombuffer, &romfilesize);
+      rombuffer = (uint8_t*)malloc(romfilesize);
+      bool res  = vmupro_read_file_complete(launchfile, rombuffer, &romfilesize);
       if (!res) {
-        vmupro_log(VMUPRO_LOG_ERROR, kLogSMSEmu, "Error reading file %s", launchPath);
+        vmupro_log(VMUPRO_LOG_ERROR, kLogSMSEmu, "Error reading file %s", launchfile);
         free(rombuffer);
         rombuffer = nullptr;
       }
     }
     else {
-      vmupro_log(VMUPRO_LOG_ERROR, kLogSMSEmu, "File %s is empty!", launchPath);
+      vmupro_log(VMUPRO_LOG_ERROR, kLogSMSEmu, "File %s is empty!", launchfile);
       return;
     }
   }
   else {
-    vmupro_log(VMUPRO_LOG_ERROR, kLogSMSEmu, "File %s does not exist!", launchPath);
+    vmupro_log(VMUPRO_LOG_ERROR, kLogSMSEmu, "File %s does not exist!", launchfile);
     return;
   }
 
@@ -470,16 +485,16 @@ void app_main(void) {
     sms_back_buffer = vmupro_get_back_buffer();
 
     // We need to allocate some memory for SRAM, RAM, VDP RAM and the audio buffer
-    sms_sram     = (uint8_t *)malloc(0x8000);
-    sms_ram      = (uint8_t *)malloc(0x2000);
-    sms_vdp_vram = (uint8_t *)malloc(0x4000);
-    pauseBuffer  = (uint8_t *)malloc(115200);
+    sms_sram     = (uint8_t*)malloc(0x8000);
+    sms_ram      = (uint8_t*)malloc(0x2000);
+    sms_vdp_vram = (uint8_t*)malloc(0x4000);
+    pauseBuffer  = (uint8_t*)malloc(115200);
 
     // We need a maximum of 736 stereo 16-bit samples at 44.1khz at 60fps. This works out to
     // 736 x 4 = 2944 bytes
     // We also zero out the allocated buffer to prevent any cracks during startup
-    sms_audio_buffer = (uint32_t *)malloc(736 * sizeof(uint32_t));
-    memset((void *)sms_audio_buffer, 0x00, 736 * sizeof(uint32_t));
+    sms_audio_buffer = (uint32_t*)malloc(736 * sizeof(uint32_t));
+    memset((void*)sms_audio_buffer, 0x00, 736 * sizeof(uint32_t));
 
     // Now check everything was allocated successfully
     if (!sms_sram || !sms_ram || !sms_vdp_vram || !sms_audio_buffer) {
