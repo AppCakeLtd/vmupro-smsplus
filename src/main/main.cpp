@@ -214,9 +214,7 @@ void Tick() {
           inOptionsMenu = false;
         }
         else {
-          if (smsContextSelectionIndex != 4) {
-            vmupro_resume_double_buffer_renderer();
-          }
+          vmupro_resume_double_buffer_renderer();
           reset_frame_time();
           lastTime             = vmupro_get_time_us();
           accumulated_us       = 0;
