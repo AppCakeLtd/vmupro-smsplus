@@ -84,7 +84,34 @@ void sms_frame(int skip_render);
 void sms_init(void);
 void sms_reset(void);
 
-extern "C" void system_manage_sram(uint8_t* sram, int cartslot, int mode) {}
+extern "C" void system_manage_sram(uint8_t* sram, int cartslot, int mode) {
+  char filepath[512];
+
+  switch (mode) {
+    case SRAM_LOAD:
+      // Check if we have a SRAM file to same for the game
+      vmupro_log(VMUPRO_LOG_INFO, kLogSMSEmu, "SRAM LOAD requested");
+      vmupro_snprintf(filepath, 512, "/sdcard/roms/%s/SAVES/%ssram", "SMSGG", filename);
+      if (vmupro_file_exists(filepath)) {
+        size_t filesize = 0;
+        vmupro_read_file_complete(filepath, sram, &filesize);
+      }
+      break;
+    case SRAM_SAVE:
+      vmupro_log(VMUPRO_LOG_INFO, kLogSMSEmu, "SRAM SAVE requested");
+      vmupro_snprintf(filepath, 512, "/sdcard/roms/%s/SAVES/%ssram", "SMSGG", filename);
+      if (vmupro_write_file_complete(filepath, sram, 0x8000)) {
+        vmupro_log(VMUPRO_LOG_INFO, kLogSMSEmu, "SRAM SAVE success");
+      }
+      else {
+        vmupro_log(VMUPRO_LOG_ERROR, kLogSMSEmu, "SRAM SAVE Failed!");
+      }
+      break;
+    default:
+      vmupro_log(VMUPRO_LOG_ERROR, kLogSMSEmu, "Unexpected MODE in system_manage_sram");
+      break;
+  }
+}
 
 static void update_frame_time(uint64_t ftime) {
   num_frames++;
