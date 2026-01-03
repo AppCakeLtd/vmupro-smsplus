@@ -426,7 +426,46 @@ void Tick() {
   }
 }
 
-void Exit() {}
+void Exit() {
+  system_poweroff();
+
+  if (sms_sram) {
+    free(sms_sram);
+    sms_sram = nullptr;
+  }
+
+  if (sms_ram) {
+    free(sms_ram);
+    sms_ram = nullptr;
+  }
+
+  if (sms_vdp_vram) {
+    free(sms_vdp_vram);
+    sms_vdp_vram = nullptr;
+  }
+
+  if (pauseBuffer) {
+    free(pauseBuffer);
+    pauseBuffer = nullptr;
+  }
+
+  if (launchfile) {
+    free(launchfile);
+    launchfile = nullptr;
+  }
+
+  if (filename) {
+    free(filename);
+    filename = nullptr;
+  }
+
+  if (sms_audio_buffer) {
+    free(sms_audio_buffer);
+    sms_audio_buffer = nullptr;
+  }
+
+  vmupro_log(VMUPRO_LOG_INFO, kLogSMSEmu, "SMSPlus %s Exited", option.version);
+}
 
 void app_main(void) {
   vmupro_log(VMUPRO_LOG_INFO, kLogSMSEmu, "Starting SMSPLUS", option.version);
