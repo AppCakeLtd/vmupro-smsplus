@@ -15,16 +15,17 @@ static constexpr size_t SMS_VISIBLE_HEIGHT = 192;
 static constexpr size_t GG_SCREEN_WIDTH   = 160;
 static constexpr size_t GG_VISIBLE_HEIGHT = 144;
 
-static char* launchfile             = nullptr;
-static uint8_t* rombuffer           = nullptr;
-static int frame_buffer_offset      = 48;  // for game gear apparently
-static bool initialised             = false;
-static uint8_t* sms_back_buffer     = nullptr;
-volatile uint32_t* sms_audio_buffer = nullptr;
-static uint8_t* sms_sram            = nullptr;
-static uint8_t* sms_ram             = nullptr;
-static uint8_t* sms_vdp_vram        = nullptr;
-static uint8_t* pauseBuffer         = nullptr;
+static char* launchfile         = nullptr;
+static char* filename           = nullptr;
+static uint8_t* rombuffer       = nullptr;
+static int frame_buffer_offset  = 48;  // for game gear apparently
+static bool initialised         = false;
+static uint8_t* sms_back_buffer = nullptr;
+uint32_t* sms_audio_buffer      = nullptr;
+static uint8_t* sms_sram        = nullptr;
+static uint8_t* sms_ram         = nullptr;
+static uint8_t* sms_vdp_vram    = nullptr;
+static uint8_t* pauseBuffer     = nullptr;
 
 static bool emuRunning    = true;
 static bool inOptionsMenu = false;
