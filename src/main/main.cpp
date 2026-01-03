@@ -135,7 +135,7 @@ static float get_fps() {
   return num_frames / (frame_time_total / 1e6f);
 }
 
-static bool savaStateHandler(const char* filename) {
+static bool saveStateHandler(const char* filename) {
   // Save to a file named after the game + state (.ggstate)
   char filepath[512];
   vmupro_snprintf(filepath, 512, "/sdcard/roms/%s/%sstate", "SMSGG", filename);
@@ -254,7 +254,7 @@ void Tick() {
         if (smsContextSelectionIndex == 0) {
           vmupro_resume_double_buffer_renderer();
           // Save in both cases
-          savaStateHandler((const char*)launchfile);
+          saveStateHandler(filename);
 
           // Close the modal
           reset_frame_time();
@@ -264,7 +264,7 @@ void Tick() {
         }
         else if (smsContextSelectionIndex == 1) {
           vmupro_resume_double_buffer_renderer();
-          loadStateHandler((const char*)launchfile);
+          loadStateHandler(filename);
 
           // Close the modal
           reset_frame_time();
@@ -450,6 +450,19 @@ void app_main(void) {
     return;
   }
 
+  // Extract just the filename from the full path and store in filename global variable
+  filename = (char*)malloc(512);
+  memset(filename, 0x00, 512);
+  char* filename_ptr = strrchr(launchfile, '/');
+  if (filename_ptr != nullptr) {
+    filename_ptr++;  // Move past the '/'
+    vmupro_snprintf(filename, 512, "%s", filename_ptr);
+  }
+  else {
+    // If no '/' found, the entire launchfile is the filename
+    vmupro_snprintf(filename, 512, "%s", launchfile);
+  }
+
   // char launchpath[512 + 22];
   // vmupro_snprintf(launchfile, (512 + 22), "/sdcard/roms/SMSGG/%s", launchfile);
 
@@ -552,11 +565,20 @@ void app_main(void) {
   frame_counter = 0;
   initialised   = true;
 
+  // Check and create necessary folders on start
+  if (!vmupro_folder_exists("/sdcard/roms/SMSGG/STATE")) {
+    vmupro_create_folder("/sdcard/roms/SMSGG/STATE");
+  }
+
+  if (!vmupro_folder_exists("/sdcard/roms/SMSGG/SAVES")) {
+    vmupro_create_folder("/sdcard/roms/SMSGG/SAVES");
+  }
+
   vmupro_audio_start_listen_mode();
+
+  vmupro_log(VMUPRO_LOG_INFO, kLogSMSEmu, "SMSPlus %s Init Done", option.version);
 
   Tick();
 
   Exit();
-
-  vmupro_log(VMUPRO_LOG_INFO, kLogSMSEmu, "SMSPlus %s Init Done", option.version);
 }
