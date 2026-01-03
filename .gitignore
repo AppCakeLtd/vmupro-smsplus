@@ -7,3 +7,4 @@ src/vmupacker_debug
 src/comport.txt
 *.vmupack
 src/vmupacker_venv
+CLAUDE.md

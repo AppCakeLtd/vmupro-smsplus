@@ -77,8 +77,9 @@ The emulator supports:
 
 ### ROM Setup
 
-1. Place SMS/Game Gear ROM files on the VMUPro device in `/sdcard/roms/MasterSystem/`
+1. Place SMS/Game Gear ROM files on the VMUPro device in `/sdcard/roms/SMSGG/`
 2. Supported formats: `.sms` (Master System) and `.gg` (Game Gear)
+3. The file browser supports sub-folders, so you can organise files as you'd like
 
 ### Controls
 
