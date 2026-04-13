@@ -8,3 +8,4 @@ src/comport.txt
 *.vmupack
 src/vmupacker_venv
 CLAUDE.md
+vmupro_screenshot*
